@@ -1,8 +1,16 @@
 // Sends automatic email reminders for upcoming appointments. Invoked on a
 // schedule by pg_cron (see supabase/migrations). Idempotent: each appointment
 // gets at most one reminder, tracked via appointments.reminder_sent_at.
-// Required function secrets: RESEND_API_KEY, FROM_EMAIL.
-import { createClient } from "jsr:@supabase/supabase-js@2";
+// Config: RESEND_API_KEY and FROM_EMAIL, read from function secrets or, as a
+// fallback, from Supabase Vault via get_app_secret.
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+
+async function getSecret(admin: SupabaseClient, name: string): Promise<string | null> {
+  const env = Deno.env.get(name);
+  if (env) return env;
+  const { data } = await admin.rpc("get_app_secret", { secret_name: name });
+  return (data as string | null) ?? null;
+}
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -12,16 +20,16 @@ function json(status: number, body: Record<string, unknown>) {
 }
 
 Deno.serve(async () => {
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  const fromEmail = Deno.env.get("FROM_EMAIL");
-  if (!resendKey || !fromEmail) {
-    return json(200, { skipped: "RESEND_API_KEY / FROM_EMAIL not configured" });
-  }
-
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
+
+  const resendKey = await getSecret(admin, "RESEND_API_KEY");
+  const fromEmail = await getSecret(admin, "FROM_EMAIL");
+  if (!resendKey || !fromEmail) {
+    return json(200, { skipped: "RESEND_API_KEY / FROM_EMAIL not configured" });
+  }
 
   const { data: settings } = await admin.from("clinic_settings").select("*").eq("id", 1).single();
   const reminderHours = settings?.reminder_hours ?? 24;

@@ -63,12 +63,20 @@ in-app **Send email now** button and **automatic reminders**:
 
 1. Create a free [Resend](https://resend.com) account (3,000 emails/month free).
 2. Verify the office's domain (or use Resend's test address to try it out).
-3. In the Supabase dashboard → Edge Functions → Secrets, add:
-   - `RESEND_API_KEY` — from the Resend dashboard
-   - `FROM_EMAIL` — e.g. `Front Desk <office@yourdomain.com>`
+3. Provide the config in either of two ways (env secret wins if both are set):
+   - Supabase dashboard → Edge Functions → Secrets: add `RESEND_API_KEY` and
+     `FROM_EMAIL` (e.g. `Front Desk <office@yourdomain.com>`), **or**
+   - Supabase Vault (SQL editor):
+     `select vault.create_secret('<your-key>', 'RESEND_API_KEY');`
+     `select vault.create_secret('Front Desk <office@yourdomain.com>', 'FROM_EMAIL');`
 
 Until those are set, the app shows a friendly "not configured" message and the
 manual buttons still work.
+
+**Resend test mode:** until a domain is verified in Resend, emails can only be
+sent from `onboarding@resend.dev` and only **to the email address that owns the
+Resend account**. Sends to real patients will fail until the domain is verified
+(Resend dashboard → Domains).
 
 ## Creating staff accounts
 

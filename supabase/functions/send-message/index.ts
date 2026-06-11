@@ -1,6 +1,14 @@
 // Sends a one-off email to a patient on behalf of signed-in staff, via Resend.
-// Required function secrets: RESEND_API_KEY, FROM_EMAIL (e.g. "Front Desk <office@yourdomain.com>").
-import { createClient } from "jsr:@supabase/supabase-js@2";
+// Config: RESEND_API_KEY and FROM_EMAIL (e.g. "Front Desk <office@yourdomain.com>"),
+// read from function secrets or, as a fallback, from Supabase Vault via get_app_secret.
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+
+async function getSecret(admin: SupabaseClient, name: string): Promise<string | null> {
+  const env = Deno.env.get(name);
+  if (env) return env;
+  const { data } = await admin.rpc("get_app_secret", { secret_name: name });
+  return (data as string | null) ?? null;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,8 +37,9 @@ Deno.serve(async (req: Request) => {
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData?.user) return json(401, { error: "Not signed in" });
 
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  const fromEmail = Deno.env.get("FROM_EMAIL");
+  const admin = createClient(supabaseUrl, serviceKey);
+  const resendKey = await getSecret(admin, "RESEND_API_KEY");
+  const fromEmail = await getSecret(admin, "FROM_EMAIL");
   if (!resendKey || !fromEmail) {
     return json(503, {
       error:
@@ -55,7 +64,6 @@ Deno.serve(async (req: Request) => {
   const ok = resp.ok;
   const detail = ok ? null : await resp.text();
 
-  const admin = createClient(supabaseUrl, serviceKey);
   await admin.from("message_log").insert({
     appointment_id: appointment_id ?? null,
     recipient: to,
