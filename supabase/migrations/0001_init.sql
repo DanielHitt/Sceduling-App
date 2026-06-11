@@ -50,6 +50,7 @@ create index message_log_appointment_idx on public.message_log (appointment_id);
 create table public.clinic_settings (
   id int primary key default 1 check (id = 1),
   clinic_name text not null default 'Our Office',
+  clinic_phone text,
   reminder_hours int not null default 24,
   timezone text not null default 'America/New_York',
   updated_at timestamptz not null default now()
@@ -99,6 +100,23 @@ create policy "staff full access" on public.clinic_settings
 -- Live updates so multiple front-desk screens stay in sync.
 alter publication supabase_realtime add table public.appointments;
 alter publication supabase_realtime add table public.providers;
+
+-- Weekly digest: hourly on Mondays, ping send-weekly-digest (it only sends at
+-- 8 AM clinic time). Same placeholder notes as below.
+-- select cron.schedule(
+--   'scheduler-weekly-digest',
+--   '0 * * * 1',
+--   $$
+--   select net.http_post(
+--     url := 'https://<PROJECT-REF>.supabase.co/functions/v1/send-weekly-digest',
+--     headers := jsonb_build_object(
+--       'Content-Type', 'application/json',
+--       'Authorization', 'Bearer <ANON-KEY>'
+--     ),
+--     body := '{}'::jsonb
+--   );
+--   $$
+-- );
 
 -- Automatic reminders: every 15 minutes, ping the send-reminders edge function.
 -- IMPORTANT: replace <PROJECT-REF> and <ANON-KEY> with your project's values

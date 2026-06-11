@@ -10,8 +10,14 @@ with email notifications to patients built in.
   per provider/room. Click an empty slot to book, click an appointment to edit.
 - **Multiple providers/rooms** — add as many as you need in Settings; filter the
   calendar with one tap.
-- **Recurring appointments** — weekly or every-2-weeks series. When editing, choose
-  "only this one", "this + following", or "all".
+- **Recurring appointments** — weekly, every-2-weeks, or a **12-week treatment
+  course** (every Mon–Thu at the same time for 12 weeks, booked as one series).
+  When editing, choose "only this one", "this + following", or "all".
+- **Weekly digest** — every Monday at 8 AM (clinic time), each patient with
+  appointments that week gets one summary email listing all of them, with the
+  office phone number. Appointments covered by the digest skip the
+  per-appointment reminder, so course patients get exactly one reminder a week;
+  anything booked after Monday still gets the regular advance reminder.
 - **Patient messaging** — if a phone or email is on the appointment:
   - *Send email now* — sends a confirmation / change notice / cancellation /
     reminder directly from the app (via Resend).

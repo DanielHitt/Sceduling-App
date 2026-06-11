@@ -17,7 +17,7 @@ interface ParsedCommand {
   notes: string | null;
   new_date: string | null;
   new_time: string | null;
-  repeat: "none" | "weekly" | "biweekly" | null;
+  repeat: "none" | "weekly" | "biweekly" | "course12" | null;
   repeat_count: number | null;
   clarification: string | null;
 }

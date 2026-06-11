@@ -13,6 +13,7 @@ interface Props {
 export default function SettingsModal({ providers, settings, onClose, onSaved }: Props) {
   const [clinicName, setClinicName] = useState(settings?.clinic_name ?? "Our Office");
   const [clinicPhone, setClinicPhone] = useState(settings?.clinic_phone ?? "");
+  const [timezone, setTimezone] = useState(settings?.timezone ?? "America/New_York");
   const [reminderHours, setReminderHours] = useState(settings?.reminder_hours ?? 24);
   const [newProvider, setNewProvider] = useState("");
   const [localProviders, setLocalProviders] = useState(providers);
@@ -60,6 +61,7 @@ export default function SettingsModal({ providers, settings, onClose, onSaved }:
         .update({
           clinic_name: clinicName,
           clinic_phone: clinicPhone.trim() || null,
+          timezone,
           reminder_hours: reminderHours,
         })
         .eq("id", 1);
@@ -106,6 +108,24 @@ export default function SettingsModal({ providers, settings, onClose, onSaved }:
               placeholder="1-555-555-5555"
               className={inputCls}
             />
+          </div>
+          <div>
+            <label className="mb-0.5 block text-xs font-medium text-slate-600">
+              Office timezone (used for reminder timing and email wording)
+            </label>
+            <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className={inputCls}>
+              {[
+                ["America/New_York", "Eastern"],
+                ["America/Chicago", "Central"],
+                ["America/Denver", "Mountain"],
+                ["America/Phoenix", "Arizona"],
+                ["America/Los_Angeles", "Pacific"],
+                ["America/Anchorage", "Alaska"],
+                ["Pacific/Honolulu", "Hawaii"],
+              ].map(([tz, label]) => (
+                <option key={tz} value={tz}>{label} ({tz})</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="mb-0.5 block text-xs font-medium text-slate-600">

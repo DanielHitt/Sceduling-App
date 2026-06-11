@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { addMinutes, addWeeks, format } from "date-fns";
+import { addDays, addMinutes, addWeeks, format } from "date-fns";
 import { supabase } from "../lib/supabase";
 import type { Appointment, AppointmentStatus, ClinicSettings, Provider } from "../lib/types";
 import { STATUS_LABELS } from "../lib/types";
@@ -19,7 +19,7 @@ export interface ModalSeed {
   patientEmail?: string;
   durationMinutes?: number;
   notes?: string;
-  repeat?: "none" | "weekly" | "biweekly";
+  repeat?: "none" | "weekly" | "biweekly" | "course12";
   repeatCount?: number;
 }
 
@@ -42,7 +42,7 @@ interface Props {
 }
 
 type Scope = "this" | "future" | "all";
-type Repeat = "none" | "weekly" | "biweekly";
+type Repeat = "none" | "weekly" | "biweekly" | "course12";
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 
@@ -106,23 +106,31 @@ export default function AppointmentModal({ appointment, seed, overrides, provide
     setNotice(null);
     try {
       if (!isEdit) {
-        const rows = [];
-        const count = repeat === "none" ? 1 : repeatCount;
-        const intervalWeeks = repeat === "biweekly" ? 2 : 1;
-        const seriesId = repeat === "none" ? null : crypto.randomUUID();
-        for (let i = 0; i < count; i++) {
-          const s = addWeeks(startsAt, i * intervalWeeks);
-          rows.push({
-            provider_id: providerId,
-            series_id: seriesId,
-            patient_name: name,
-            patient_phone: phone || null,
-            patient_email: email || null,
-            starts_at: s.toISOString(),
-            ends_at: addMinutes(s, duration).toISOString(),
-            notes: notes || null,
-          });
+        // Expand the repeat choice into concrete visit dates, all at the same time of day.
+        const occurrences: Date[] = [];
+        if (repeat === "course12") {
+          // 12-week treatment course: every Mon–Thu from the start date for 12 weeks.
+          for (let d = 0; d < 84; d++) {
+            const day = addDays(startsAt, d);
+            if (day.getDay() >= 1 && day.getDay() <= 4) occurrences.push(day);
+          }
+        } else if (repeat === "none") {
+          occurrences.push(startsAt);
+        } else {
+          const intervalWeeks = repeat === "biweekly" ? 2 : 1;
+          for (let i = 0; i < repeatCount; i++) occurrences.push(addWeeks(startsAt, i * intervalWeeks));
         }
+        const seriesId = occurrences.length > 1 ? crypto.randomUUID() : null;
+        const rows = occurrences.map((s) => ({
+          provider_id: providerId,
+          series_id: seriesId,
+          patient_name: name,
+          patient_phone: phone || null,
+          patient_email: email || null,
+          starts_at: s.toISOString(),
+          ends_at: addMinutes(s, duration).toISOString(),
+          notes: notes || null,
+        }));
         const { data, error } = await supabase.from("appointments").insert(rows).select("id").limit(1);
         if (error) throw error;
         if (emailOnSave && email) await trySendEmail("confirmation", data?.[0]?.id ?? null);
@@ -289,8 +297,9 @@ export default function AppointmentModal({ appointment, seed, overrides, provide
                     <option value="none">Does not repeat</option>
                     <option value="weekly">Every week</option>
                     <option value="biweekly">Every 2 weeks</option>
+                    <option value="course12">12-week course (Mon–Thu)</option>
                   </select>
-                  {repeat !== "none" && (
+                  {repeat !== "none" && repeat !== "course12" && (
                     <select value={repeatCount} onChange={(e) => setRepeatCount(Number(e.target.value))} className={inputCls + " w-24"}>
                       {Array.from({ length: 25 }, (_, i) => i + 2).map((n) => (
                         <option key={n} value={n}>{n}×</option>
@@ -298,6 +307,11 @@ export default function AppointmentModal({ appointment, seed, overrides, provide
                     </select>
                   )}
                 </div>
+                {repeat === "course12" && (
+                  <p className="mt-1 text-xs text-slate-400">
+                    Books every Mon–Thu at this time for 12 weeks from the selected date (up to 48 visits).
+                  </p>
+                )}
               </div>
             )}
           </div>
