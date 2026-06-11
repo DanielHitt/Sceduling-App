@@ -25,6 +25,7 @@ export interface Appointment {
 export interface ClinicSettings {
   id: number;
   clinic_name: string;
+  clinic_phone: string | null;
   reminder_hours: number;
   timezone: string;
 }

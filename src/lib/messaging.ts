@@ -9,32 +9,34 @@ export function appointmentMessage(
   appt: Appointment,
   provider: Provider | undefined,
   clinicName: string,
+  clinicPhone: string | null,
   customBody?: string,
 ): { subject: string; body: string } {
   const when = `${format(new Date(appt.starts_at), "EEEE, MMMM d")} at ${format(new Date(appt.starts_at), "h:mm a")}`;
   const withWho = provider ? ` with ${provider.name}` : "";
   const firstName = appt.patient_name.split(" ")[0];
+  const callUs = clinicPhone ? `please call us at ${clinicPhone}` : "please call the office";
 
   switch (kind) {
     case "confirmation":
       return {
         subject: `Appointment confirmed — ${when}`,
-        body: `Hi ${firstName},\n\nYour appointment${withWho} is confirmed for ${when}.\n\nIf you need to reschedule, please call or reply to this message.\n\n— ${clinicName}`,
+        body: `Hi ${firstName},\n\nYour appointment${withWho} is confirmed for ${when}.\n\nIf you need to reschedule, ${callUs}.\n\n— ${clinicName}`,
       };
     case "update":
       return {
         subject: `Appointment updated — ${when}`,
-        body: `Hi ${firstName},\n\nYour appointment${withWho} has been changed. It is now scheduled for ${when}.\n\nIf this doesn't work for you, please call or reply to this message.\n\n— ${clinicName}`,
+        body: `Hi ${firstName},\n\nYour appointment${withWho} has been changed. It is now scheduled for ${when}.\n\nIf this doesn't work for you, ${callUs}.\n\n— ${clinicName}`,
       };
     case "cancellation":
       return {
         subject: `Appointment cancelled`,
-        body: `Hi ${firstName},\n\nYour appointment${withWho} on ${when} has been cancelled.\n\nPlease call or reply to this message to rebook.\n\n— ${clinicName}`,
+        body: `Hi ${firstName},\n\nYour appointment${withWho} on ${when} has been cancelled.\n\nTo rebook, ${callUs}.\n\n— ${clinicName}`,
       };
     case "reminder":
       return {
         subject: `Reminder: appointment ${when}`,
-        body: `Hi ${firstName},\n\nThis is a friendly reminder of your appointment${withWho} on ${when}.\n\n— ${clinicName}`,
+        body: `Hi ${firstName},\n\nThis is a friendly reminder of your appointment${withWho} on ${when}.\n\nIf you need to reschedule, ${callUs}.\n\n— ${clinicName}`,
       };
     case "custom":
       return {

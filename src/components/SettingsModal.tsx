@@ -12,6 +12,7 @@ interface Props {
 
 export default function SettingsModal({ providers, settings, onClose, onSaved }: Props) {
   const [clinicName, setClinicName] = useState(settings?.clinic_name ?? "Our Office");
+  const [clinicPhone, setClinicPhone] = useState(settings?.clinic_phone ?? "");
   const [reminderHours, setReminderHours] = useState(settings?.reminder_hours ?? 24);
   const [newProvider, setNewProvider] = useState("");
   const [localProviders, setLocalProviders] = useState(providers);
@@ -56,7 +57,11 @@ export default function SettingsModal({ providers, settings, onClose, onSaved }:
     try {
       const { error: e1 } = await supabase
         .from("clinic_settings")
-        .update({ clinic_name: clinicName, reminder_hours: reminderHours })
+        .update({
+          clinic_name: clinicName,
+          clinic_phone: clinicPhone.trim() || null,
+          reminder_hours: reminderHours,
+        })
         .eq("id", 1);
       if (e1) throw e1;
       await Promise.all(
@@ -89,6 +94,18 @@ export default function SettingsModal({ providers, settings, onClose, onSaved }:
           <div>
             <label className="mb-0.5 block text-xs font-medium text-slate-600">Office name (appears in messages)</label>
             <input value={clinicName} onChange={(e) => setClinicName(e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="mb-0.5 block text-xs font-medium text-slate-600">
+              Office phone (patients are told to call this number in emails)
+            </label>
+            <input
+              type="tel"
+              value={clinicPhone}
+              onChange={(e) => setClinicPhone(e.target.value)}
+              placeholder="1-555-555-5555"
+              className={inputCls}
+            />
           </div>
           <div>
             <label className="mb-0.5 block text-xs font-medium text-slate-600">

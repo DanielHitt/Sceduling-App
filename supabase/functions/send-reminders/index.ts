@@ -27,6 +27,7 @@ Deno.serve(async () => {
 
   const resendKey = await getSecret(admin, "RESEND_API_KEY");
   const fromEmail = await getSecret(admin, "FROM_EMAIL");
+  const replyTo = await getSecret(admin, "REPLY_TO_EMAIL");
   if (!resendKey || !fromEmail) {
     return json(200, { skipped: "RESEND_API_KEY / FROM_EMAIL not configured" });
   }
@@ -35,6 +36,9 @@ Deno.serve(async () => {
   const reminderHours = settings?.reminder_hours ?? 24;
   const clinicName = settings?.clinic_name ?? "Our Office";
   const timezone = settings?.timezone ?? "America/New_York";
+  const callUs = settings?.clinic_phone
+    ? `please call us at ${settings.clinic_phone}`
+    : "please call the office";
 
   const now = new Date();
   const cutoff = new Date(now.getTime() + reminderHours * 3600_000);
@@ -68,12 +72,18 @@ Deno.serve(async () => {
     const subject = `Reminder: appointment on ${when}`;
     const body = `Hi ${firstName},\n\nThis is a friendly reminder of your appointment${
       providerName ? ` with ${providerName}` : ""
-    } on ${when}.\n\nIf you need to reschedule, please call the office.\n\n— ${clinicName}`;
+    } on ${when}.\n\nIf you need to reschedule, ${callUs}.\n\n— ${clinicName}`;
 
     const resp = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: fromEmail, to: [appt.patient_email], subject, text: body }),
+      body: JSON.stringify({
+        from: fromEmail,
+        to: [appt.patient_email],
+        subject,
+        text: body,
+        ...(replyTo ? { reply_to: replyTo } : {}),
+      }),
     });
     const ok = resp.ok;
     const detail = ok ? null : await resp.text();

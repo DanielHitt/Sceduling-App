@@ -93,7 +93,9 @@ export default function AppointmentModal({ appointment, seed, overrides, provide
   });
 
   const trySendEmail = async (kind: MessageKind, apptId: string | null) => {
-    const { subject, body } = appointmentMessage(kind, currentDraft(), provider, settings.clinic_name);
+    const { subject, body } = appointmentMessage(
+      kind, currentDraft(), provider, settings.clinic_name, settings.clinic_phone,
+    );
     await sendEmail(apptId, email, subject, body, kind);
   };
 
@@ -206,7 +208,9 @@ export default function AppointmentModal({ appointment, seed, overrides, provide
     setBusy(false);
   };
 
-  const draftMsg = appointmentMessage(msgKind, currentDraft(), provider, settings.clinic_name);
+  const draftMsg = appointmentMessage(
+    msgKind, currentDraft(), provider, settings.clinic_name, settings.clinic_phone,
+  );
   const inputCls =
     "w-full rounded border border-slate-300 px-2.5 py-1.5 text-sm focus:border-blue-500 focus:outline-none";
   const labelCls = "mb-0.5 block text-xs font-medium text-slate-600";

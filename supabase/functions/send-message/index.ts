@@ -46,6 +46,7 @@ Deno.serve(async (req: Request) => {
   if (!staffRow) return json(403, { error: "This account is not on the staff list" });
   const resendKey = await getSecret(admin, "RESEND_API_KEY");
   const fromEmail = await getSecret(admin, "FROM_EMAIL");
+  const replyTo = await getSecret(admin, "REPLY_TO_EMAIL");
   if (!resendKey || !fromEmail) {
     return json(503, {
       error:
@@ -65,7 +66,13 @@ Deno.serve(async (req: Request) => {
   const resp = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: fromEmail, to: [to], subject, text: body }),
+    body: JSON.stringify({
+      from: fromEmail,
+      to: [to],
+      subject,
+      text: body,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+    }),
   });
   const ok = resp.ok;
   const detail = ok ? null : await resp.text();
