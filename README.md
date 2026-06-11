@@ -19,6 +19,12 @@ with email notifications to patients built in.
     member's own device. Works with zero setup, no account needed.
 - **Automatic reminders** — patients with an email on file get a reminder
   N hours before their appointment (configurable in Settings, default 24h).
+- **Voice commands** — tap 🎤 Voice and say "Book Maria Lopez with Dr. Patel next
+  Tuesday at 2pm", "Cancel John's Friday appointment", or "Move Bob's Tuesday
+  appointment to 3:30". Claude parses the command and opens the appointment form
+  pre-filled — staff review and press Save, so nothing changes without a human
+  confirming it. Works in Chrome/Edge/Safari (uses the browser's speech
+  recognition); other browsers can type the command instead.
 - **Live sync** — multiple front-desk screens update in real time.
 - **Staff-only access** — email/password logins; no public sign-up.
 
@@ -72,6 +78,20 @@ in-app **Send email now** button and **automatic reminders**:
 
 Until those are set, the app shows a friendly "not configured" message and the
 manual buttons still work.
+
+## Enabling voice commands
+
+The 🎤 Voice button needs an Anthropic API key (from
+[console.anthropic.com](https://console.anthropic.com)) so Claude can parse the
+spoken command. Provide it the same two ways as the email config: an
+`ANTHROPIC_API_KEY` edge-function secret, or in Vault:
+`select vault.create_secret('<your-key>', 'ANTHROPIC_API_KEY');`
+Each command costs a fraction of a cent. Until configured, the button shows a
+"not configured" message.
+
+Note on privacy: the browser's built-in speech recognition may process audio on
+the browser vendor's servers (e.g. Google for Chrome). Keep spoken commands to
+scheduling details, not clinical information.
 
 **Resend test mode:** until a domain is verified in Resend, emails can only be
 sent from `onboarding@resend.dev` and only **to the email address that owns the

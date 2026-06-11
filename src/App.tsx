@@ -5,8 +5,9 @@ import { supabase } from "./lib/supabase";
 import type { Appointment, ClinicSettings, Provider } from "./lib/types";
 import Login from "./components/Login";
 import TimeGrid from "./components/TimeGrid";
-import AppointmentModal, { type ModalSeed } from "./components/AppointmentModal";
+import AppointmentModal, { type ModalOverrides, type ModalSeed } from "./components/AppointmentModal";
 import SettingsModal from "./components/SettingsModal";
+import VoiceCommand from "./components/VoiceCommand";
 
 type View = "day" | "week";
 
@@ -35,8 +36,9 @@ function Scheduler() {
   const [view, setView] = useState<View>(() => (window.innerWidth < 768 ? "day" : "week"));
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [hiddenProviders, setHiddenProviders] = useState<Set<string>>(new Set());
-  const [modal, setModal] = useState<{ appt?: Appointment; seed?: ModalSeed } | null>(null);
+  const [modal, setModal] = useState<{ appt?: Appointment; seed?: ModalSeed; overrides?: ModalOverrides } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
 
   const rangeStart = useMemo(
     () => (view === "week" ? startOfWeek(currentDate, { weekStartsOn: 1 }) : startOfDay(currentDate)),
@@ -138,6 +140,13 @@ function Scheduler() {
             + New
           </button>
           <button
+            onClick={() => setVoiceOpen(true)}
+            className="rounded border border-blue-600 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50"
+            title="Speak a command: book, move, or cancel an appointment"
+          >
+            🎤 Voice
+          </button>
+          <button
             onClick={() => setSettingsOpen(true)}
             className="rounded border border-slate-300 px-2 py-1.5 text-sm hover:bg-slate-100"
             title="Settings"
@@ -225,10 +234,25 @@ function Scheduler() {
         )}
       </main>
 
+      {voiceOpen && (
+        <VoiceCommand
+          providers={providers}
+          onCreate={(seed) => {
+            setVoiceOpen(false);
+            setModal({ seed });
+          }}
+          onEdit={(appt, overrides) => {
+            setVoiceOpen(false);
+            setModal({ appt, overrides });
+          }}
+          onClose={() => setVoiceOpen(false)}
+        />
+      )}
       {modal && settings && (
         <AppointmentModal
           appointment={modal.appt}
           seed={modal.seed}
+          overrides={modal.overrides}
           providers={providers}
           settings={settings}
           onClose={() => setModal(null)}

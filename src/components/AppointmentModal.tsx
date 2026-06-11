@@ -14,11 +14,27 @@ import {
 export interface ModalSeed {
   date: Date;
   providerId?: string;
+  patientName?: string;
+  patientPhone?: string;
+  patientEmail?: string;
+  durationMinutes?: number;
+  notes?: string;
+  repeat?: "none" | "weekly" | "biweekly";
+  repeatCount?: number;
+}
+
+/** Pre-applied changes when opening an existing appointment (e.g. from a voice command). */
+export interface ModalOverrides {
+  date?: string;
+  time?: string;
+  durationMinutes?: number;
+  status?: AppointmentStatus;
 }
 
 interface Props {
   appointment?: Appointment;
   seed?: ModalSeed;
+  overrides?: ModalOverrides;
   providers: Provider[];
   settings: ClinicSettings;
   onClose: () => void;
@@ -30,26 +46,28 @@ type Repeat = "none" | "weekly" | "biweekly";
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 
-export default function AppointmentModal({ appointment, seed, providers, settings, onClose, onSaved }: Props) {
+export default function AppointmentModal({ appointment, seed, overrides, providers, settings, onClose, onSaved }: Props) {
   const isEdit = !!appointment;
   const initialStart = appointment ? new Date(appointment.starts_at) : (seed?.date ?? new Date());
   const initialDuration = appointment
     ? Math.round((new Date(appointment.ends_at).getTime() - new Date(appointment.starts_at).getTime()) / 60000)
-    : 30;
+    : (seed?.durationMinutes ?? 30);
 
-  const [name, setName] = useState(appointment?.patient_name ?? "");
-  const [phone, setPhone] = useState(appointment?.patient_phone ?? "");
-  const [email, setEmail] = useState(appointment?.patient_email ?? "");
+  const [name, setName] = useState(appointment?.patient_name ?? seed?.patientName ?? "");
+  const [phone, setPhone] = useState(appointment?.patient_phone ?? seed?.patientPhone ?? "");
+  const [email, setEmail] = useState(appointment?.patient_email ?? seed?.patientEmail ?? "");
   const [providerId, setProviderId] = useState(
     appointment?.provider_id ?? seed?.providerId ?? providers[0]?.id ?? "",
   );
-  const [date, setDate] = useState(format(initialStart, "yyyy-MM-dd"));
-  const [time, setTime] = useState(format(initialStart, "HH:mm"));
-  const [duration, setDuration] = useState(initialDuration);
-  const [notes, setNotes] = useState(appointment?.notes ?? "");
-  const [status, setStatus] = useState<AppointmentStatus>(appointment?.status ?? "scheduled");
-  const [repeat, setRepeat] = useState<Repeat>("none");
-  const [repeatCount, setRepeatCount] = useState(4);
+  const [date, setDate] = useState(overrides?.date ?? format(initialStart, "yyyy-MM-dd"));
+  const [time, setTime] = useState(overrides?.time ?? format(initialStart, "HH:mm"));
+  const [duration, setDuration] = useState(overrides?.durationMinutes ?? initialDuration);
+  const [notes, setNotes] = useState(appointment?.notes ?? seed?.notes ?? "");
+  const [status, setStatus] = useState<AppointmentStatus>(
+    overrides?.status ?? appointment?.status ?? "scheduled",
+  );
+  const [repeat, setRepeat] = useState<Repeat>(seed?.repeat ?? "none");
+  const [repeatCount, setRepeatCount] = useState(seed?.repeatCount ?? 4);
   const [scope, setScope] = useState<Scope>("this");
   const [emailOnSave, setEmailOnSave] = useState(false);
   const [msgKind, setMsgKind] = useState<MessageKind>(isEdit ? "update" : "confirmation");
