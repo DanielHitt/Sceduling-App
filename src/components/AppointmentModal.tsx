@@ -337,7 +337,16 @@ export default function AppointmentModal({ appointment, seed, providers, setting
           </div>
         </form>
 
-        {/* Messaging */}
+        {/* Messaging — only for saved appointments, so composing a message can
+            never be mistaken for booking one. New bookings use the checkbox above. */}
+        {!isEdit ? (
+          <div className="mt-5 border-t border-slate-200 pt-4">
+            <p className="text-xs text-slate-400">
+              Messaging buttons appear here once the appointment is saved. To notify the patient
+              right away, tick the checkbox above before clicking Save.
+            </p>
+          </div>
+        ) : (
         <div className="mt-5 border-t border-slate-200 pt-4">
           <h3 className="mb-2 text-sm font-semibold text-slate-700">Message the patient</h3>
           {!email && !phone ? (
@@ -385,6 +394,7 @@ export default function AppointmentModal({ appointment, seed, providers, setting
             </>
           )}
         </div>
+        )}
       </div>
     </div>
   );
