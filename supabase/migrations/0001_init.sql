@@ -58,20 +58,43 @@ insert into public.clinic_settings (id) values (1);
 create trigger clinic_settings_updated_at before update on public.clinic_settings
   for each row execute procedure extensions.moddatetime(updated_at);
 
--- RLS: any signed-in staff member has full access; anonymous users have none.
+-- Staff allowlist: an account must be listed here to see or edit anything.
+-- After creating a user (Dashboard → Authentication → Users), add them with:
+--   insert into public.staff (user_id, email)
+--   select id, email from auth.users where email = 'person@example.com';
+create table public.staff (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  added_at timestamptz not null default now()
+);
+alter table public.staff enable row level security;
+
+create or replace function public.is_staff()
+returns boolean
+language sql stable security definer
+set search_path = ''
+as $$
+  select exists (select 1 from public.staff where user_id = auth.uid())
+$$;
+grant execute on function public.is_staff() to authenticated;
+
+create policy "staff can view staff" on public.staff
+  for select to authenticated using (public.is_staff());
+
+-- RLS: only allowlisted staff have access; other accounts and anonymous users have none.
 alter table public.providers enable row level security;
 alter table public.appointments enable row level security;
 alter table public.message_log enable row level security;
 alter table public.clinic_settings enable row level security;
 
 create policy "staff full access" on public.providers
-  for all to authenticated using (true) with check (true);
+  for all to authenticated using (public.is_staff()) with check (public.is_staff());
 create policy "staff full access" on public.appointments
-  for all to authenticated using (true) with check (true);
+  for all to authenticated using (public.is_staff()) with check (public.is_staff());
 create policy "staff full access" on public.message_log
-  for all to authenticated using (true) with check (true);
+  for all to authenticated using (public.is_staff()) with check (public.is_staff());
 create policy "staff full access" on public.clinic_settings
-  for all to authenticated using (true) with check (true);
+  for all to authenticated using (public.is_staff()) with check (public.is_staff());
 
 -- Live updates so multiple front-desk screens stay in sync.
 alter publication supabase_realtime add table public.appointments;

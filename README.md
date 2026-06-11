@@ -80,14 +80,20 @@ Resend account**. Sends to real patients will fail until the domain is verified
 
 ## Creating staff accounts
 
-There is intentionally no sign-up page. In the Supabase dashboard:
+There is intentionally no sign-up page, and accounts alone grant nothing: an
+account must also be on the `staff` allowlist table before it can see any data.
 
-1. Authentication → Sign In / Up → **disable** "Allow new users to sign up"
-   (so nobody can self-register through the API).
-2. Authentication → Users → **Add user** → enter the staff member's email and a
-   password (or send an invite). Share the app URL + credentials with them.
+1. Authentication → Users → **Add user** → enter the staff member's email and a
+   password (or send an invite).
+2. SQL Editor → add them to the allowlist:
+   ```sql
+   insert into public.staff (user_id, email)
+   select id, email from auth.users where email = 'person@example.com';
+   ```
+3. Optionally also disable Authentication → Sign In / Up → "Allow new users to
+   sign up" for defense in depth (stray accounts can't access anything either way).
 
-Every staff account has full access to the schedule.
+To revoke someone, delete their row from `staff` (and their auth user).
 
 ## A note on patient privacy
 

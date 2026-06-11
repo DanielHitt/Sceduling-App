@@ -38,6 +38,12 @@ Deno.serve(async (req: Request) => {
   if (userError || !userData?.user) return json(401, { error: "Not signed in" });
 
   const admin = createClient(supabaseUrl, serviceKey);
+  const { data: staffRow } = await admin
+    .from("staff")
+    .select("user_id")
+    .eq("user_id", userData.user.id)
+    .maybeSingle();
+  if (!staffRow) return json(403, { error: "This account is not on the staff list" });
   const resendKey = await getSecret(admin, "RESEND_API_KEY");
   const fromEmail = await getSecret(admin, "FROM_EMAIL");
   if (!resendKey || !fromEmail) {
