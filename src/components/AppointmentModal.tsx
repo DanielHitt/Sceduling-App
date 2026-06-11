@@ -363,6 +363,8 @@ export default function AppointmentModal({ appointment, seed, providers, setting
                 {email && (
                   <a
                     href={mailtoLink(email, draftMsg.subject, draftMsg.body)}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100"
                   >
                     Open email app
@@ -371,6 +373,8 @@ export default function AppointmentModal({ appointment, seed, providers, setting
                 {phone && (
                   <a
                     href={smsLink(phone, draftMsg.body)}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100"
                   >
                     Open texting app
